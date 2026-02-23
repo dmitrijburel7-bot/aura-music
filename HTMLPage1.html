@@ -1,0 +1,1498 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>AURA Music</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#050505">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #050505;
+            --accent: #bc77ff;
+            --border-soft: rgba(255, 255, 255, 0.1);
+            --text-main: #f5f5f5;
+            --text-muted: #9b9b9b;
+            --radius-lg: 24px;
+            --radius-md: 18px;
+            --radius-sm: 999px;
+            --blur-strong: 20px;
+            --transition-fast: 150ms ease-out;
+            --transition-med: 220ms ease-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, "SF Pro Text", sans-serif;
+            overscroll-behavior: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .app-shell {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            max-height: 900px;
+            border-radius: 32px;
+            background: radial-gradient(circle at top, #171717 0, #050505 55%, #000 100%);
+            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 40px 80px rgba(0, 0, 0, 0.9);
+        }
+
+        @supports (height: 100dvh) {
+            .app-shell {
+                height: 100dvh;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0;
+            }
+
+            .app-shell {
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        .app-bg-blur {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.45;
+            background: radial-gradient(circle at 0% 0%, rgba(188, 119, 255, 0.4), transparent 55%), radial-gradient(circle at 100% 100%, rgba(102, 51, 255, 0.25), transparent 55%);
+            filter: blur(60px);
+            transform: scale(1.2);
+        }
+
+        .loader-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 180ms ease-out;
+            z-index: 5;
+        }
+
+            .loader-overlay.visible {
+                opacity: 1;
+                pointer-events: auto;
+                background: radial-gradient(circle at 50% 0%, rgba(5,5,5,0.9), rgba(5,5,5,0.96));
+                backdrop-filter: blur(18px);
+                -webkit-backdrop-filter: blur(18px);
+            }
+
+        .loader-pulse {
+            width: 46px;
+            height: 46px;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.16);
+            background: radial-gradient(circle at 30% 0%, rgba(255,255,255,0.9), rgba(188,119,255,0.7));
+            box-shadow: 0 0 0 0 rgba(188,119,255,0.4), 0 18px 40px rgba(0,0,0,1);
+            animation: loaderPulse 1.2s infinite ease-out;
+        }
+
+        @keyframes loaderPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(188,119,255,0.4), 0 18px 40px rgba(0,0,0,1);
+            }
+
+            70% {
+                box-shadow: 0 0 0 18px rgba(188,119,255,0), 0 18px 40px rgba(0,0,0,1);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(188,119,255,0), 0 18px 40px rgba(0,0,0,1);
+            }
+        }
+
+        .app-inner {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+            padding-left: 12px;
+            padding-right: 12px;
+            z-index: 1;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 8px 10px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 10px;
+            background: radial-gradient(circle at 30% 0%, #ffffff, #bc77ff);
+            box-shadow: 0 0 22px rgba(188, 119, 255, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .logo-title {
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .logo-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-cta {
+            font-size: 11px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(120deg, rgba(188, 119, 255, 0.24), rgba(0, 0, 0, 0.3));
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+            box-shadow: 0 11px 26px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+            .top-cta:active {
+                transform: scale(0.95);
+                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+                background: linear-gradient(120deg, rgba(188, 119, 255, 0.3), rgba(0, 0, 0, 0.6));
+            }
+
+        .top-cta-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 10px rgba(188, 119, 255, 0.9);
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0 4px;
+            overflow: hidden;
+        }
+
+        .views {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .view {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(24px);
+            transition: opacity var(--transition-med), transform var(--transition-med);
+            overflow-y: auto;
+            padding-bottom: 80px;
+            padding-right: 4px;
+        }
+
+            .view.active {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateX(0);
+            }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 4px 2px 8px;
+        }
+
+        .section-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0 2px 14px;
+        }
+
+        .vibe-card {
+            border-radius: var(--radius-lg);
+            padding: 14px 14px 10px;
+            background: radial-gradient(circle at 0% 0%, rgba(188, 119, 255, 0.18), rgba(10, 10, 10, 0.9));
+            border: 1px solid var(--border-soft);
+            backdrop-filter: blur(var(--blur-strong));
+            -webkit-backdrop-filter: blur(var(--blur-strong));
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            margin-bottom: 16px;
+            transition: box-shadow 180ms ease-out, border-color 180ms ease-out, background 180ms ease-out;
+        }
+
+        .vibe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .vibe-label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .vibe-value {
+            font-size: 12px;
+            color: var(--accent);
+            text-shadow: 0 0 8px rgba(188, 119, 255, 0.9);
+        }
+
+        .vibe-slider-wrapper {
+            position: relative;
+            margin-top: 2px;
+        }
+
+        .vibe-gradient-track {
+            position: absolute;
+            inset: 50% 0 auto 0;
+            transform: translateY(-50%);
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(188, 119, 255, 0.2), rgba(188, 119, 255, 0.8));
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .vibe-slider {
+            position: relative;
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            height: 20px;
+        }
+
+            .vibe-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                background: #fff;
+                border: 2px solid var(--accent);
+                box-shadow: 0 0 18px rgba(188, 119, 255, 0.7), 0 0 0 6px rgba(188, 119, 255, 0.25);
+                cursor: pointer;
+                margin-top: -6px;
+                transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+            }
+
+            .vibe-slider:active::-webkit-slider-thumb {
+                transform: scale(0.95);
+                box-shadow: 0 0 26px rgba(188, 119, 255, 1), 0 0 0 8px rgba(188, 119, 255, 0.28);
+            }
+
+        .vibe-footer {
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tracks-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .track-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border-radius: var(--radius-md);
+            background: rgba(9, 9, 9, 0.9);
+            border: 1px solid var(--border-soft);
+            backdrop-filter: blur(var(--blur-strong));
+            -webkit-backdrop-filter: blur(var(--blur-strong));
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+        }
+
+            .track-card:active {
+                transform: scale(0.95);
+                box-shadow: 0 8px 15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+                background: rgba(14, 14, 14, 0.9);
+            }
+
+        .track-cover {
+            width: 44px;
+            height: 44px;
+            border-radius: 16px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            box-shadow: 0 14px 25px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+        }
+
+        .track-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .track-title {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-artist {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .track-pill {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .track-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+            justify-content: center;
+            margin-left: 4px;
+        }
+
+        .icon-button {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(15, 15, 15, 0.96);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.05);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+        }
+
+            .icon-button:active {
+                transform: scale(0.9);
+                box-shadow: 0 4px 10px rgba(0,0,0,1), 0 0 0 1px rgba(255,255,255,0.09);
+                background: rgba(25, 25, 25, 0.96);
+            }
+
+        .icon-heart {
+            width: 14px;
+            height: 14px;
+            position: relative;
+            transform: translateY(1px);
+        }
+
+            .icon-heart::before,
+            .icon-heart::after {
+                content: "";
+                position: absolute;
+                width: 8px;
+                height: 12px;
+                background: rgba(255,255,255,0.8);
+                border-radius: 8px 8px 0 0;
+                transform-origin: bottom center;
+            }
+
+            .icon-heart::before {
+                left: 3px;
+                transform: rotate(-45deg);
+            }
+
+            .icon-heart::after {
+                right: 3px;
+                transform: rotate(45deg);
+            }
+
+            .icon-heart.liked::before,
+            .icon-heart.liked::after {
+                background: var(--accent);
+                box-shadow: 0 0 14px rgba(188,119,255,0.8);
+            }
+
+        .icon-download {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid rgba(255,255,255,0.9);
+            position: relative;
+        }
+
+            .icon-download::before {
+                content: "";
+                position: absolute;
+                width: 10px;
+                height: 2px;
+                background: rgba(255,255,255,0.9);
+                top: -3px;
+                left: -5px;
+            }
+
+        .icon-share {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 2px solid rgba(255,255,255,0.9);
+            position: relative;
+        }
+
+            .icon-share::before,
+            .icon-share::after {
+                content: "";
+                position: absolute;
+                width: 2px;
+                height: 6px;
+                border-radius: 999px;
+                background: rgba(255,255,255,0.9);
+            }
+
+            .icon-share::before {
+                left: 5px;
+                top: -3px;
+                transform: rotate(45deg);
+            }
+
+            .icon-share::after {
+                left: 5px;
+                top: 4px;
+                transform: rotate(-45deg);
+            }
+
+        .search-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+            .search-icon::after {
+                content: "";
+                position: absolute;
+                width: 8px;
+                height: 2px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.7);
+                right: -4px;
+                bottom: 1px;
+                transform: rotate(45deg);
+            }
+
+        .search-input {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft);
+            background: rgba(10, 10, 10, 0.96);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            padding: 9px 12px 9px 32px;
+            font-size: 13px;
+            color: var(--text-main);
+            outline: none;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.02);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+        }
+
+            .search-input::placeholder {
+                color: var(--text-muted);
+            }
+
+            .search-input:focus {
+                border-color: rgba(188, 119, 255, 0.6);
+                box-shadow: 0 14px 35px rgba(0, 0, 0, 1), 0 0 0 1px rgba(188, 119, 255, 0.4);
+                background: rgba(10, 10, 10, 0.98);
+            }
+
+        .search-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chip {
+            font-size: 11px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-soft);
+            background: rgba(12, 12, 12, 0.95);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+        }
+
+            .chip:active {
+                transform: scale(0.95);
+                border-color: rgba(188, 119, 255, 0.6);
+                background: rgba(188, 119, 255, 0.18);
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 1), 0 0 0 1px rgba(188, 119, 255, 0.5);
+            }
+
+        .search-empty {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .library-group {
+            margin-bottom: 18px;
+        }
+
+        .library-group-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .library-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 10px;
+            border-radius: var(--radius-md);
+            background: rgba(12, 12, 12, 0.96);
+            border: 1px solid var(--border-soft);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+        }
+
+            .library-row:active {
+                transform: scale(0.96);
+                background: rgba(18, 18, 18, 0.96);
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            }
+
+        .library-thumb {
+            width: 38px;
+            height: 38px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(188, 119, 255, 0.8), rgba(20, 20, 20, 0.9));
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.07);
+        }
+
+        .library-text-main {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .library-text-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .mini-player {
+            position: relative;
+            margin: 0 4px;
+            padding: 10px 12px;
+            border-radius: 18px;
+            background: rgba(10, 10, 10, 0.96);
+            border: 1px solid var(--border-soft);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 260ms ease-out, opacity 260ms ease-out;
+        }
+
+            .mini-player.active {
+                transform: translateY(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+        .mini-cover {
+            width: 40px;
+            height: 40px;
+            border-radius: 16px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+        }
+
+        .mini-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .mini-title {
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-artist {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-progress-wrapper {
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .mini-time {
+            font-size: 9px;
+            color: var(--text-muted);
+            width: 30px;
+            text-align: center;
+        }
+
+        .mini-progress {
+            position: relative;
+            flex: 1;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+
+        .mini-progress-inner {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, rgba(188, 119, 255, 0.2), rgba(188, 119, 255, 1));
+            box-shadow: 0 0 16px rgba(188, 119, 255, 0.9);
+            transition: width 80ms linear;
+        }
+
+        .mini-play {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: radial-gradient(circle at 30% 0%, rgba(255, 255, 255, 0.75), rgba(188, 119, 255, 0.9));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+            .mini-play:active {
+                transform: scale(0.93);
+            }
+
+        .mini-play-icon {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 7px 0 7px 11px;
+            border-color: transparent transparent transparent #050505;
+            transform: translateX(1px);
+        }
+
+            .mini-play-icon.pause {
+                width: 10px;
+                height: 10px;
+                border: none;
+                box-sizing: content-box;
+                display: flex;
+                gap: 3px;
+            }
+
+                .mini-play-icon.pause::before,
+                .mini-play-icon.pause::after {
+                    content: "";
+                    width: 3px;
+                    height: 10px;
+                    border-radius: 2px;
+                    background: #050505;
+                }
+
+        .tab-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            padding: 8px 8px 4px;
+            margin-top: 8px;
+        }
+
+        .tab-item {
+            flex: 1;
+            border-radius: var(--radius-sm);
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+
+            .tab-item:active {
+                transform: scale(0.96);
+            }
+
+            .tab-item.active {
+                color: #ffffff;
+                border-color: rgba(255, 255, 255, 0.16);
+                background: rgba(12, 12, 12, 0.96);
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06);
+            }
+
+        .tab-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 10px rgba(188, 119, 255, 0.9);
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <div class="app-bg-blur"></div>
+        <div class="loader-overlay" id="loader">
+            <div class="loader-pulse"></div>
+        </div>
+
+        <div class="app-inner">
+            <div class="top-bar">
+                <div class="logo">
+                    <div class="logo-icon"></div>
+                    <div class="logo-text">
+                        <div class="logo-title">AURA</div>
+                        <div class="logo-sub">Music</div>
+                    </div>
+                </div>
+                <button class="top-cta" type="button" id="openSettings">
+                    <span class="top-cta-dot"></span>
+                    <span>Adaptive Mode</span>
+                </button>
+            </div>
+
+            <div class="content">
+                <div class="views">
+                    <div class="view active" id="view-home">
+                        <h2 class="section-title">Today’s aura</h2>
+                        <p class="section-subtitle">Use the slider and quick search to start listening instantly.</p>
+
+                        <div class="vibe-card" id="vibeCard">
+                            <div class="vibe-header">
+                                <div class="vibe-label">Energy level</div>
+                                <div class="vibe-value" id="vibeValue">42%</div>
+                            </div>
+                            <div class="vibe-slider-wrapper">
+                                <div class="vibe-gradient-track" id="vibeGradient"></div>
+                                <input id="vibeSlider" class="vibe-slider" type="range" min="0" max="100" value="42">
+                            </div>
+                            <div class="vibe-footer">
+                                <span>Chill</span>
+                                <span>Hyper</span>
+                            </div>
+                        </div>
+
+                        <div class="tracks-grid" id="homeTracks"></div>
+                    </div>
+
+                    <div class="view" id="view-search">
+                        <h2 class="section-title">Search</h2>
+                        <p class="section-subtitle">Jamendo catalogue in real time. Type a name or mood.</p>
+
+                        <div class="search-header">
+                            <div class="search-input-wrapper">
+                                <div class="search-icon"></div>
+                                <input id="searchInput" class="search-input" type="text" placeholder="Search by track or artist">
+                            </div>
+                            <div class="search-categories" id="searchCategories">
+                                <button class="chip" data-query="ambient" type="button">Ambient</button>
+                                <button class="chip" data-query="chill" type="button">Chill</button>
+                                <button class="chip" data-query="rock" type="button">Rock</button>
+                                <button class="chip" data-query="lofi" type="button">Lo-fi</button>
+                            </div>
+                        </div>
+
+                        <div id="searchResults"></div>
+                        <div class="search-empty" id="searchEmpty">Start typing to search Jamendo.</div>
+                    </div>
+
+                    <div class="view" id="view-library">
+                        <h2 class="section-title">Library</h2>
+                        <p class="section-subtitle">Your liked tracks, kept across sessions.</p>
+
+                        <div class="library-group">
+                            <div class="library-group-title">Collections</div>
+                            <div class="library-row">
+                                <div class="library-thumb"></div>
+                                <div class="track-info">
+                                    <div class="library-text-main">Night Codes</div>
+                                    <div class="library-text-sub">Curated for late sessions & shipping builds</div>
+                                </div>
+                                <div class="track-pill">Mix</div>
+                            </div>
+                        </div>
+
+                        <div class="library-group">
+                            <div class="library-group-title">Liked tracks</div>
+                            <div id="libraryLiked"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mini-player" id="miniPlayer">
+                <div class="mini-cover" id="miniCover"></div>
+                <div class="mini-info">
+                    <div class="mini-title" id="miniTitle">—</div>
+                    <div class="mini-artist" id="miniArtist">—</div>
+                    <div class="mini-progress-wrapper">
+                        <div class="mini-time" id="miniTimeCurrent">0:00</div>
+                        <div class="mini-progress">
+                            <div class="mini-progress-inner" id="miniProgress"></div>
+                        </div>
+                        <div class="mini-time" id="miniTimeDuration">0:00</div>
+                    </div>
+                </div>
+                <button class="mini-play" type="button" id="miniPlayBtn">
+                    <div class="mini-play-icon" id="miniPlayIcon"></div>
+                </button>
+            </div>
+
+            <div class="tab-bar">
+                <button class="tab-item active" type="button" data-view="home">
+                    <span class="tab-dot"></span>
+                    <span>Home</span>
+                </button>
+                <button class="tab-item" type="button" data-view="search">
+                    <span>Search</span>
+                </button>
+                <button class="tab-item" type="button" data-view="library">
+                    <span>Library</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.expand();
+            tg.setBackgroundColor('#050505');
+            tg.setHeaderColor('#050505');
+        }
+
+        const JAMENDO_CLIENT_ID = '56d30cce';
+        const JAMENDO_BASE = 'https://api.jamendo.com/v3.0';
+
+        let currentTrack = null;
+        let isPlaying = false;
+        let progressInterval = null;
+        let likedTracks = [];
+        let searchAbortController = null;
+        let vibeValueState = 42;
+
+        const views = {
+            home: document.getElementById('view-home'),
+            search: document.getElementById('view-search'),
+            library: document.getElementById('view-library')
+        };
+        const tabButtons = document.querySelectorAll('.tab-item');
+        const loader = document.getElementById('loader');
+
+        const vibeSlider = document.getElementById('vibeSlider');
+        const vibeValue = document.getElementById('vibeValue');
+        const vibeCard = document.getElementById('vibeCard');
+        const vibeGradient = document.getElementById('vibeGradient');
+
+        const homeTracksContainer = document.getElementById('homeTracks');
+        const libraryLikedContainer = document.getElementById('libraryLiked');
+
+        const searchInput = document.getElementById('searchInput');
+        const searchCategories = document.getElementById('searchCategories');
+        const searchResults = document.getElementById('searchResults');
+        const searchEmpty = document.getElementById('searchEmpty');
+
+        const miniPlayer = document.getElementById('miniPlayer');
+        const miniCover = document.getElementById('miniCover');
+        const miniTitle = document.getElementById('miniTitle');
+        const miniArtist = document.getElementById('miniArtist');
+        const miniProgress = document.getElementById('miniProgress');
+        const miniTimeCurrent = document.getElementById('miniTimeCurrent');
+        const miniTimeDuration = document.getElementById('miniTimeDuration');
+        const miniPlayBtn = document.getElementById('miniPlayBtn');
+        const miniPlayIcon = document.getElementById('miniPlayIcon');
+
+        const openSettings = document.getElementById('openSettings');
+
+        const audio = new Audio();
+        audio.preload = 'metadata';
+        audio.crossOrigin = 'anonymous';
+
+        function showLoader() { loader.classList.add('visible'); }
+        function hideLoader() { loader.classList.remove('visible'); }
+
+        function formatTime(sec) {
+            sec = Math.floor(sec || 0);
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return m + ':' + (s < 10 ? '0' + s : s);
+        }
+
+        function updateMiniPlayerUI() {
+            if (!currentTrack) return;
+            miniTitle.textContent = currentTrack.name || '—';
+            miniArtist.textContent = currentTrack.artist_name || '—';
+            miniCover.style.backgroundImage = `url("${currentTrack.image || ''}")`;
+            const durationSeconds = currentTrack.duration || audio.duration || 0;
+            miniTimeDuration.textContent = formatTime(durationSeconds);
+            miniTimeCurrent.textContent = formatTime(audio.currentTime || 0);
+        }
+
+        function setPlayState(playing) {
+            isPlaying = playing;
+            miniPlayIcon.classList.toggle('pause', playing);
+        }
+
+        function startProgressLoop() {
+            if (progressInterval) clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (!audio.duration) return;
+                const ratio = audio.currentTime / audio.duration;
+                miniProgress.style.width = (ratio * 100) + '%';
+                miniTimeCurrent.textContent = formatTime(audio.currentTime);
+            }, 200);
+        }
+
+        function stopProgressLoop() {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+        }
+
+        function updateMediaSession() {
+            if (!('mediaSession' in navigator) || !currentTrack) return;
+            const artworkSrc = currentTrack.image || '';
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: currentTrack.name || '',
+                artist: currentTrack.artist_name || '',
+                album: currentTrack.album_name || 'Jamendo',
+                artwork: artworkSrc ? [
+                    { src: artworkSrc, sizes: '96x96', type: 'image/jpeg' },
+                    { src: artworkSrc, sizes: '192x192', type: 'image/jpeg' }
+                ] : []
+            });
+            navigator.mediaSession.setActionHandler('play', async () => {
+                await audio.play().catch(() => { });
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+                audio.pause();
+            });
+            navigator.mediaSession.setActionHandler('stop', () => {
+                audio.pause();
+                audio.currentTime = 0;
+            });
+        }
+
+        function getTrackAudioUrl(t) {
+            return t.audiodownload || t.audio;
+        }
+
+        function loadTrack(track, autoplay = true) {
+            const url = getTrackAudioUrl(track);
+            if (!url) return;
+            currentTrack = track;
+            audio.src = url;
+            audio.currentTime = 0;
+            miniPlayer.classList.add('active');
+            miniProgress.style.width = '0%';
+            updateMiniPlayerUI();
+            setPlayState(false);
+            updateMediaSession();
+            if (autoplay) {
+                audio.play().then(() => {
+                    setPlayState(true);
+                    startProgressLoop();
+                }).catch(() => { });
+            }
+        }
+
+        audio.addEventListener('play', () => {
+            setPlayState(true);
+            startProgressLoop();
+        });
+        audio.addEventListener('pause', () => {
+            setPlayState(false);
+            stopProgressLoop();
+        });
+        audio.addEventListener('ended', () => {
+            setPlayState(false);
+            stopProgressLoop();
+            miniProgress.style.width = '0%';
+            miniTimeCurrent.textContent = '0:00';
+        });
+
+        function setView(viewKey) {
+            Object.keys(views).forEach(key => {
+                views[key].classList.toggle('active', key === viewKey);
+            });
+            tabButtons.forEach(btn => {
+                const key = btn.getAttribute('data-view');
+                btn.classList.toggle('active', key === viewKey);
+            });
+        }
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-view');
+                setView(key);
+            });
+        });
+
+        const LS_KEY = 'aura_liked_tracks_v1';
+
+        function loadLikes() {
+            try {
+                const raw = localStorage.getItem(LS_KEY);
+                likedTracks = raw ? JSON.parse(raw) : [];
+            } catch {
+                likedTracks = [];
+            }
+        }
+
+        function saveLikes() {
+            try {
+                localStorage.setItem(LS_KEY, JSON.stringify(likedTracks));
+            } catch { }
+        }
+
+        function isLiked(track) {
+            return likedTracks.some(t => t.id === track.id);
+        }
+
+        function toggleLike(track) {
+            if (isLiked(track)) {
+                likedTracks = likedTracks.filter(t => t.id !== track.id);
+            } else {
+                likedTracks.push(track);
+            }
+            saveLikes();
+            renderLiked();
+        }
+
+        function renderLiked() {
+            libraryLikedContainer.innerHTML = '';
+            if (!likedTracks.length) {
+                const empty = document.createElement('div');
+                empty.className = 'search-empty';
+                empty.textContent = 'No liked tracks yet. Tap the heart to save what you love.';
+                libraryLikedContainer.appendChild(empty);
+                return;
+            }
+            likedTracks.forEach(t => {
+                const card = createTrackCard(t, { compactActions: true });
+                libraryLikedContainer.appendChild(card);
+            });
+        }
+
+        async function downloadTrack(track) {
+            try {
+                const url = getTrackAudioUrl(track);
+                if (!url) return;
+                const a = document.createElement('a');
+                a.href = url;
+                const safeTitle = (track.name || 'aura-track').replace(/[^\w\-]+/g, '_');
+                a.download = safeTitle + '.mp3';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch { }
+        }
+
+        function shareTrack(track) {
+            const url = track.shareurl || track.shorturl || getTrackAudioUrl(track);
+            const text = (track.name || 'Track') + ' — ' + (track.artist_name || 'Artist');
+            if (navigator.share && url) {
+                navigator.share({
+                    title: 'AURA · ' + (track.name || 'Track'),
+                    text,
+                    url
+                }).catch(() => { });
+            } else if (tg && url) {
+                tg.showPopup({
+                    title: 'Share link',
+                    message: url,
+                    buttons: [{ id: 'ok', type: 'close', text: 'Close' }]
+                });
+            } else if (url) {
+                prompt('Share this link with friends:', url);
+            }
+        }
+
+        function getVibeSpeedParam() {
+            if (vibeValueState <= 30) return 'speed=slow';
+            if (vibeValueState >= 70) return 'speed=fast';
+            return 'speed=medium';
+        }
+
+        function updateVibe(value) {
+            const v = Number(value);
+            vibeValueState = v;
+            vibeValue.textContent = v + '%';
+            const glow = 10 + (v / 100) * 26;
+            const borderAlpha = 0.1 + (v / 100) * 0.2;
+            const bgAlpha = 0.18 + (v / 100) * 0.22;
+            vibeCard.style.boxShadow =
+                `0 20px 45px rgba(0,0,0,0.9),
+           0 0 ${glow}px rgba(188,119,255,0.55),
+           0 0 0 1px rgba(255,255,255,0.06)`;
+            vibeCard.style.borderColor = `rgba(255,255,255,${borderAlpha.toFixed(2)})`;
+            vibeCard.style.background =
+                `radial-gradient(circle at 0% 0%, rgba(188,119,255,${bgAlpha.toFixed(2)}), rgba(10,10,10,0.95))`;
+            vibeGradient.style.opacity = 0.4 + (v / 100) * 0.5;
+        }
+
+        vibeSlider.addEventListener('input', (e) => {
+            updateVibe(e.target.value);
+            if (searchInput.value.trim()) debouncedSearch();
+        });
+
+        function createTrackCard(track, options = {}) {
+            const { compactActions = false } = options;
+            const el = document.createElement('div');
+            el.className = 'track-card';
+
+            const cover = document.createElement('div');
+            cover.className = 'track-cover';
+            cover.style.backgroundImage = `url('${track.image || ''}')`;
+
+            const info = document.createElement('div');
+            info.className = 'track-info';
+
+            const title = document.createElement('div');
+            title.className = 'track-title';
+            title.textContent = track.name || 'Unknown';
+
+            const artist = document.createElement('div');
+            artist.className = 'track-artist';
+            artist.textContent = track.artist_name || 'Unknown artist';
+
+            const meta = document.createElement('div');
+            meta.className = 'track-meta';
+            meta.textContent = `${track.album_name || 'Jamendo'} · ${formatTime(track.duration || 0)}`;
+
+            info.appendChild(title);
+            info.appendChild(artist);
+            info.appendChild(meta);
+
+            const pill = document.createElement('div');
+            pill.className = 'track-pill';
+            pill.textContent = 'Jamendo';
+
+            const actions = document.createElement('div');
+            actions.className = 'track-actions';
+
+            const likeBtn = document.createElement('button');
+            likeBtn.type = 'button';
+            likeBtn.className = 'icon-button';
+            const heartIcon = document.createElement('div');
+            heartIcon.className = 'icon-heart';
+            if (isLiked(track)) heartIcon.classList.add('liked');
+            likeBtn.appendChild(heartIcon);
+            likeBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                toggleLike(track);
+                heartIcon.classList.toggle('liked', isLiked(track));
+            });
+
+            const downloadBtn = document.createElement('button');
+            downloadBtn.type = 'button';
+            downloadBtn.className = 'icon-button';
+            const downloadIcon = document.createElement('div');
+            downloadIcon.className = 'icon-download';
+            downloadBtn.appendChild(downloadIcon);
+            downloadBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                downloadTrack(track);
+            });
+
+            const shareBtn = document.createElement('button');
+            shareBtn.type = 'button';
+            shareBtn.className = 'icon-button';
+            const shareIcon = document.createElement('div');
+            shareIcon.className = 'icon-share';
+            shareBtn.appendChild(shareIcon);
+            shareBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                shareTrack(track);
+            });
+
+            actions.appendChild(likeBtn);
+            if (!compactActions) {
+                actions.appendChild(downloadBtn);
+                actions.appendChild(shareBtn);
+            } else {
+                actions.appendChild(shareBtn);
+            }
+
+            el.appendChild(cover);
+            el.appendChild(info);
+            el.appendChild(pill);
+            el.appendChild(actions);
+
+            el.addEventListener('click', () => {
+                loadTrack(track, true);
+            });
+
+            return el;
+        }
+
+        function buildQueryWithVibe(rawQuery) {
+            const q = rawQuery.trim();
+            const speed = getVibeSpeedParam();
+            if (!q) return speed;
+            return q + ' ' + speed;
+        }
+
+        async function searchJamendo(rawQuery, { limit = 20 } = {}) {
+            const query = buildQueryWithVibe(rawQuery);
+            const url = new URL(JAMENDO_BASE + '/tracks/');
+            url.searchParams.set('client_id', JAMENDO_CLIENT_ID);
+            url.searchParams.set('format', 'json');
+            url.searchParams.set('limit', String(limit));
+            url.searchParams.set('search', query);
+            url.searchParams.set('audioformat', 'mp31');
+
+            if (searchAbortController) searchAbortController.abort();
+            searchAbortController = new AbortController();
+
+            showLoader();
+            try {
+                const res = await fetch(url.toString(), { signal: searchAbortController.signal });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                return Array.isArray(data.results) ? data.results : [];
+            } catch (e) {
+                console.warn('Jamendo search error', e);
+                return [];
+            } finally {
+                hideLoader();
+            }
+        }
+
+        async function populateHome() {
+            const res = await searchJamendo('chill', { limit: 8 });
+            homeTracksContainer.innerHTML = '';
+            if (!res.length) {
+                const empty = document.createElement('div');
+                empty.className = 'search-empty';
+                empty.textContent = 'No starter tracks from Jamendo. Try searching manually.';
+                homeTracksContainer.appendChild(empty);
+                return;
+            }
+            res.forEach(t => homeTracksContainer.appendChild(createTrackCard(t)));
+        }
+
+        async function applySearch(query) {
+            const trimmed = query.trim();
+            if (!trimmed) {
+                searchCategories.style.display = 'flex';
+                searchResults.innerHTML = '';
+                searchEmpty.textContent = 'Start typing to search Jamendo.';
+                return;
+            }
+            searchCategories.style.display = 'none';
+            searchEmpty.textContent = '';
+            searchResults.innerHTML = '';
+            const tracks = await searchJamendo(trimmed, { limit: 25 });
+            searchResults.innerHTML = '';
+            if (!tracks.length) {
+                searchEmpty.textContent = 'Nothing yet. Try another word or vibe.';
+                return;
+            }
+            tracks.forEach(t => searchResults.appendChild(createTrackCard(t)));
+        }
+
+        let searchTimeout = null;
+        function debouncedSearch() {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applySearch(searchInput.value);
+            }, 350);
+        }
+
+        searchInput.addEventListener('input', debouncedSearch);
+
+        searchCategories.addEventListener('click', (e) => {
+            const chip = e.target.closest('.chip');
+            if (!chip) return;
+            const q = chip.getAttribute('data-query');
+            searchInput.value = q;
+            debouncedSearch();
+        });
+
+        miniPlayBtn.addEventListener('click', () => {
+            if (!currentTrack) return;
+            if (isPlaying) audio.pause();
+            else audio.play().catch(() => { });
+        });
+
+        openSettings.addEventListener('click', () => {
+            if (tg) {
+                tg.HapticFeedback ?.impactOccurred('medium');
+                tg.showAlert('Adaptive mode will later react to theme, time and motion.');
+            } else {
+                alert('Adaptive mode will later react to theme, time and motion.');
+            }
+        });
+
+        loadLikes();
+        renderLiked();
+        updateVibe(vibeSlider.value);
+        populateHome();
+
+        // анти pull-to-refresh
+        let touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchY - touchStartY;
+            if (window.scrollY === 0 && deltaY > 0) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
