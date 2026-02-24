@@ -1,78 +1,17 @@
-<!DOCTYPE html> 
-<html lang="ru"> 
-<head> 
- <meta charset="UTF-8"> 
- <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
- <title>AURA Music Pro</title> 
- <link rel="stylesheet" href="style.css"> 
- <script src="https://telegram.org/js/telegram-web-app.js"></script> 
-</head> 
-<body> 
- 
- <main class="main-container"> 
- <header class="top-bar"> 
- <h1 class="logo">AURA</h1> 
- <button class="pro-badge" onclick="openPayment()">PRO</button> 
- </header> 
- 
- <div class="search-container"> 
- <input type="text" id="searchInput" class="search-input" placeholder="Найти трек, артиста, настроение..."> 
- </div> 
- 
- <div id="loader" class="loader">Ищем музыку...</div> 
- 
- <div id="track-list" class="track-list"></div> 
- </main> 
- 
- <div id="mini-player" class="mini-player" onclick="openFullScreenPlayer()"> 
- <div class="mini-progress" id="mini-progress"></div> 
- <img id="mini-cover" src="" alt="Cover" class="mini-cover"> 
- <div class="mini-info"> 
-            <div id="mini-title" class="mini-title">Ничего не играет</div>
-            <div id="mini-artist" class="mini-artist">Выбери трек</div>
-        </div>
-        <button id="mini-play-btn" class="control-btn" onclick="event.stopPropagation(); togglePlay();">
-            <svg viewBox="0 0 24 24" fill="white" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-    </div>
- 
-    <div id="full-player" class="full-player">
-        <div class="full-player-header">
-            <button class="icon-btn" onclick="closeFullScreenPlayer()">
-                <svg viewBox="0 0 24 24" fill="white" width="30" height="30"><path d="M7 10l5 5 5-5z"/></svg>
-            </button>
-            <span>Сейчас играет</span>
-            <button class="icon-btn">⋮</button>
-        </div>
- 
-        <img id="full-cover" src="" alt="Cover Big" class="full-cover">
- 
-        <div class="full-info">
-            <h2 id="full-title" class="full-title">Название трека</h2>
-            <p id="full-artist" class="full-artist">Имя артиста</p>
-        </div>
- 
-        <div class="progress-container" onclick="seekTrack(event)">
-            <div id="progress-bar" class="progress-bar"></div>
-        </div>
-        <div class="time-info">
-            <span id="time-current">0:00</span>
-            <span id="time-total">0:00</span>
-        </div>
- 
-        <div class="player-controls">
-            <button class="icon-btn" onclick="playPrevious()">
-                <svg viewBox="0 0 24 24" fill="white" width="36" height="36"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-            </button>
-            <button id="full-play-btn" class="main-play-btn" onclick="togglePlay()">
-                <svg viewBox="0 0 24 24" fill="black" width="36" height="36"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-            <button class="icon-btn" onclick="playNext()">
-                <svg viewBox="0 0 24 24" fill="white" width="36" height="36"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-        </div>
-    </div>
- 
-    <script src="app.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050505">
+  <title>AURA Music</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Content будет динамически загружаться -->
+  </div>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
