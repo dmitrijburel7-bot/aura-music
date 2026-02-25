@@ -3,10 +3,8 @@
 
 import { openModal, closeModal } from '../animations.js';
 import { createElement, haptic, isTelegram } from '../utils.js';
-import { PRO, HAPTIC } from '../constants.js';
+import { PRO, HAPTIC, ACTION } from '../constants.js';
 import { dispatch, getState } from '../store.js';
-import { ACTION } from '../constants.js';
-
 // ─── Modal Manager ────────────────────────────────────────────────────────────
 
 class ModalManager {
