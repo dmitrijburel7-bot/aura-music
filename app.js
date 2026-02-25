@@ -2,11 +2,30 @@
 // This is the ONLY file imported by index.html (as type="module").
 // It initialises everything in the right order and connects modules.
 
+// ─── ИСПРАВЛЕНИЕ #1 ───────────────────────────────────────────────────────────
+// STORAGE_KEY живёт в constants.js, а НЕ в utils.js.
+// Старый импорт вызывал SyntaxError при парсинге модуля — до выполнения
+// любого кода — поэтому boot() никогда не вызывался и сплеш висел вечно.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { initUI } from './ui.js';
 import { dispatch, getState, select, selectors } from './store.js';
 import audioPlayer from './player.js';
-import { ACTION, SCREEN, HAPTIC, ERROR_MSG } from './constants.js';
-import { isTelegram, getTelegramUser, getTelegramTheme, haptic, storageGet, STORAGE_KEY } from './utils.js';
+import {
+  ACTION,
+  SCREEN,
+  HAPTIC,
+  ERROR_MSG,
+  STORAGE_KEY,          // ← теперь правильно: из constants.js
+} from './constants.js';
+import {
+  isTelegram,
+  getTelegramUser,
+  getTelegramTheme,
+  haptic,
+  storageGet,
+  // STORAGE_KEY здесь больше нет — он не экспортируется из utils.js
+} from './utils.js';
 
 // ─── Boot Sequence ────────────────────────────────────────────────────────────
 
@@ -205,17 +224,24 @@ function bindGlobalErrorHandlers() {
 // ─── Fatal Error Screen ───────────────────────────────────────────────────────
 
 function showFatalError(err) {
+  // Этот экран рендерится только если boot() бросил исключение.
+  // После исправления импортов это не должно происходить в штатном режиме.
+  const stackLine = err?.stack?.split('\n')[1]?.trim() || '';
   document.body.innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:100vh;background:#0a0a0a;color:#fff;font-family:sans-serif;padding:24px;text-align:center;">
+    <div style="
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:100vh;background:#0a0a0a;color:#fff;font-family:sans-serif;
+      padding:24px;text-align:center;
+    ">
       <span style="font-size:48px;margin-bottom:16px;">🎵</span>
       <h1 style="font-size:20px;margin-bottom:8px;">AURA couldn't start</h1>
-      <p style="color:#888;font-size:14px;margin-bottom:24px;">${err?.message || 'Unknown error'}</p>
-      <button onclick="location.reload()"
-        style="background:#e94560;color:#fff;border:none;padding:12px 28px;border-radius:999px;
-          font-size:16px;cursor:pointer;">
-        Retry
-      </button>
+      <p style="color:#888;font-size:14px;margin-bottom:4px;">${err?.message || 'Unknown error'}</p>
+      <p style="color:#555;font-size:11px;font-family:monospace;margin-bottom:24px;">${stackLine}</p>
+      <button
+        onclick="location.reload()"
+        style="background:#e94560;color:#fff;border:none;padding:12px 28px;
+          border-radius:999px;font-size:16px;cursor:pointer;"
+      >Retry</button>
     </div>
   `;
 }
